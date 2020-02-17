@@ -1,3 +1,2 @@
 language: csharp
-os: windows
 solution: Privilege Escalation.sln
