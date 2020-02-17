@@ -1,2 +1,3 @@
 language: csharp
-solution: Privilege_Escalation\Privilege Escalation.sln
+os: windows
+solution: Privilege Escalation.sln
