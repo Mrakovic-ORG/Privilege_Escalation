@@ -1,4 +1,6 @@
 # Privilege_Escalation
+[![Build Status](https://img.shields.io/travis/com/Mrakovic-ORG/Privilege_Escalation?style=for-the-badge)](https://travis-ci.com/Mrakovic-ORG/Privilege_Escalation)
+
 An windows UAC Bypass made simple 😋
 
 ## Features
@@ -15,3 +17,8 @@ dotnet build
 
 ## In action
 ![in-action](images/in-action.gif)
+
+License
+----
+
+MIT
